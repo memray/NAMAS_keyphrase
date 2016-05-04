@@ -1,5 +1,6 @@
+.idea/
 # models, large files
-/data/models/
+data/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
