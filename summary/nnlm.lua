@@ -164,7 +164,7 @@ function nnlm:train(data, valid_data)
    for epoch = 1, self.opt.epochs do
       data:reset()
       self:renorm_tables()
-      self:run_valid(valid_data)
+      -- self:run_valid(valid_data)
 
       -- Loss for the epoch.
       local epoch_loss = 0
@@ -176,41 +176,41 @@ function nnlm:train(data, valid_data)
       sys.tic()
       while not data:is_done() do
          local input, target = data:next_batch(self.opt.miniBatchSize)
-         if data:is_done() then break end
+		if input[1]:size()[1] ~= 1 then
+			 local out = self.mlp:forward(input)
+			 local err = self.criterion:forward(out, target) * target:size(1)
+			 local deriv = self.criterion:backward(out, target)
 
-         local out = self.mlp:forward(input)
-         local err = self.criterion:forward(out, target) * target:size(1)
-         local deriv = self.criterion:backward(out, target)
+			 if not utils.isnan(err) then
+				loss = loss + err
+				epoch_loss = epoch_loss + err
 
-         if not utils.isnan(err) then
-            loss = loss + err
-            epoch_loss = epoch_loss + err
+				self.mlp:zeroGradParameters()
+				self.mlp:backward(input, deriv)
+				self.mlp:updateParameters(self.opt.learningRate)
+			 else
+				print("NaN")
+				print(input)
+			 end
 
-            self.mlp:zeroGradParameters()
-            self.mlp:backward(input, deriv)
-            self.mlp:updateParameters(self.opt.learningRate)
-         else
-            print("NaN")
-            print(input)
-         end
+			 -- Logging
+			 if batch % self.opt.printEvery == 1 then
+				print(string.format(
+						 "[Loss: %f Epoch: %d Position: %d Rate: %f Time: %f]",
+						 loss / ((batch - last_batch) * self.opt.miniBatchSize),
+						 epoch,
+						 batch * self.opt.miniBatchSize,
+						 self.opt.learningRate,
+						 sys.toc()
+				))
+				sys.tic()
+				last_batch = batch
+				loss = 0
+			 end
 
-         -- Logging
-         if batch % self.opt.printEvery == 1 then
-            print(string.format(
-                     "[Loss: %f Epoch: %d Position: %d Rate: %f Time: %f]",
-                     loss / ((batch - last_batch) * self.opt.miniBatchSize),
-                     epoch,
-                     batch * self.opt.miniBatchSize,
-                     self.opt.learningRate,
-                     sys.toc()
-            ))
-            sys.tic()
-            last_batch = batch
-            loss = 0
-         end
-
-         batch = batch + 1
-         total = total + input[1]:size(1)
+			 batch = batch + 1
+			 total = total + input[1]:size(1)
+		end
       end
       print(string.format("[EPOCH : %d LOSS: %f TOTAL: %d BATCHES: %d]",
                           epoch, epoch_loss / total, total, batch))

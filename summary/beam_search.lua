@@ -10,6 +10,7 @@
 --          Sumit Chopra <spchopra@fb.com>
 --          Jason Weston <jase@fb.com>
 
+require 'fbcunn'
 -- A beam search decoder
 local data     = require('summary.data')
 local features = require('summary.features')

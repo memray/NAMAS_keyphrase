@@ -13,7 +13,7 @@ mkdir -p $MDL_DIR
 th -i $ABS/summary/train.lua -titleDir  $OUT_DIR/train/title/ \
  -articleDir  $OUT_DIR/train/article/ \
  -modelFilename  $MDL_DIR/$2 \
- -miniBatchSize  64 \
+ -miniBatchSize  10 \
  -embeddingDim  64 \
  -bowDim  200 \
  -hiddenSize  64 \
